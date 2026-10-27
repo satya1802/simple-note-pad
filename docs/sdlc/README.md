@@ -5,7 +5,7 @@
 <!-- sdlc:auto:start overview -->
 simple note pad
 
-**Documentation version:** v1
+**Documentation version:** v2
 <!-- sdlc:auto:end overview -->
 
 ## Contents
@@ -14,7 +14,7 @@ simple note pad
 | Document | State |
 |---|---|
 | [Requirements](requirements/README.md) | v1 approved |
-| [Architecture](architecture/README.md) | 0 entries |
+| [Architecture](architecture/README.md) | 7 entries |
 | [Development](development/README.md) | 0 entries |
 | [Testing](testing/README.md) | 0 entries |
 | [Deployment](deployment/README.md) | 0 entries |
@@ -31,7 +31,7 @@ simple note pad
 | [Runbook](deployment/runbook.md) | not deployed yet |
 | [Release notes](deployment/release-notes.md) | 0 releases |
 | [Traceability matrix](traceability-matrix.md) | 12 requirements |
-| [Changelog](CHANGELOG.md) | 1 version |
+| [Changelog](CHANGELOG.md) | 2 versions |
 <!-- sdlc:auto:end contents -->
 
 ## Open gaps
@@ -42,4 +42,10 @@ simple note pad
 - Rationale references password-reset and account-verification emails, but no user story or acceptance criterion in this requirements set covers a password-reset flow or an email-verification flow -- scope conflict to confirm with product owner.
 - Password strength/length requirements are not specified in the input.
 - Exact UI form of the save-status indicator (text label, icon, timing) is not specified.
+
+### Architecture
+
+- Input does not map which of US-001 through US-012 each architectural element satisfies; all 12 requirement keys are linked here at the whole-architecture level only, not per-component -- a human should confirm/refine this mapping.
+- No explicit requirement-ID mapping per component was provided in the input.
+- No explicit requirement IDs were attached to these critical paths in the input.
 <!-- sdlc:auto:end open-gaps -->

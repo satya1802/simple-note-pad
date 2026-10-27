@@ -5,7 +5,70 @@
 <!-- sdlc:auto:start narrative -->
 ## Overview
 
-_No entries for this phase yet._
+### ARCH-OVERVIEW · approved · source: architecture:summary
+
+Overall system is a lightweight personal notepad: React 19 SPA + FastAPI 0.115 API + managed PostgreSQL 16 on AWS, with SendGrid for transactional email.
+
+Approved architecture (version 1) describes a single-page web app for individual-scale note-taking. Users register/sign in with email+password (JWT sessions), then create, auto-save, delete and search private, per-user plain-text notes synced across devices via the server. Notes list is ordered most-recently-updated first; search uses PostgreSQL's built-in text matching, avoiding a separate search engine. SendGrid handles password-reset/verification emails. Infrastructure is deliberately kept minimal for modest individual-user scale.
+
+**Related:** US-001, US-002, US-003, US-004, US-005, US-006, US-007, US-008, US-009, US-010, US-011, US-012
+
+- ⚠ Input does not map which of US-001 through US-012 each architectural element satisfies; all 12 requirement keys are linked here at the whole-architecture level only, not per-component -- a human should confirm/refine this mapping.
+
+### ARCH-COMPONENTS · approved · source: architecture:components
+
+Four components: React web app, FastAPI backend, PostgreSQL database, and SendGrid email service.
+
+- web_app: React 19 SPA -- responsive UI for sign-in/registration, notes list, note editor with debounced auto-save and save-status indicator, and text search; guards routes so only signed-in users reach notes.
+- api: FastAPI 0.115 backend -- REST endpoints for auth (register, login, logout) and per-user note CRUD/list/search; enforces per-user access scoping, hashes passwords, issues/validates JWTs, triggers password-reset emails.
+- db: PostgreSQL 16 -- durable private per-user storage of users and notes; orders notes by updated_at and performs built-in full-text search.
+- email: SendGrid -- delivers transactional password-reset and account-verification emails.
+
+- ⚠ No explicit requirement-ID mapping per component was provided in the input.
+
+### ARCH-CRITICAL-PATHS · approved · source: architecture:critical_paths
+
+Three critical paths defined: register/sign-in, auto-save note edit, and list/search notes.
+
+1. Register and sign in: user registers with unique email/password; backend validates input, rejects duplicate emails, hashes password, creates user, returns JWT stored by SPA for subsequent calls.
+2. Auto-save a note edit: as user types, SPA debounces changes and sends updates to API; API verifies ownership, persists new content and updated timestamp, returns save status for the UI indicator.
+3. List and search own notes: SPA requests user's notes ordered most-recent-first, optionally with a search term; API scopes query to the user and uses PostgreSQL text matching to filter by content.
+
+- ⚠ No explicit requirement IDs were attached to these critical paths in the input.
+
+### ARCH-DATA-MODEL · approved · source: architecture:entities
+
+Three entities: users, notes, and password_resets.
+
+- users: id, email, password_hash, email_verified, created_at.
+- notes: id, user_id, content, created_at, updated_at.
+- password_resets: id, user_id, token_hash, expires_at, used_at.
+All notes are scoped to a user_id, enforcing per-user data isolation at the schema level.
+
+### ARCH-API · approved · source: architecture:endpoints
+
+Ten REST endpoints cover authentication, password reset, and per-user note CRUD/list/search.
+
+Auth: POST /auth/register (unique email + password, rejects duplicates/invalid email/blank password, returns JWT); POST /auth/login (returns JWT, generic error on invalid credentials); POST /auth/logout (client-side token discard); POST /auth/password-reset/request (always returns success to avoid revealing account existence, sends email via SendGrid); POST /auth/password-reset/confirm (sets new password using valid reset token).
+Notes: GET /notes (list, most-recently-updated first, optional q param for PostgreSQL text search); POST /notes (create note owned by authenticated user); GET /notes/{id} (fetch single note, denied if not owned); PATCH /notes/{id} (auto-save edit, updates updated_at, returns save status, denied if not owned); DELETE /notes/{id} (delete note owned by authenticated user).
+
+### ARCH-DEPLOYMENT · approved · source: architecture:deployment_nodes
+
+Deployment topology: static SPA on S3+CloudFront, containerized API on App Runner/ECS Fargate, managed RDS PostgreSQL, and SendGrid as external SaaS.
+
+- React SPA: Static site hosting via S3 + CloudFront, delivering the React 19 browser bundle.
+- FastAPI Service: AWS App Runner / ECS Fargate running a Python container (FastAPI 0.115, Uvicorn).
+- PostgreSQL: Amazon RDS for PostgreSQL 16, managed database.
+- SendGrid: External SaaS via SendGrid Email API.
+
+### ARCH-TECH-DECISIONS · approved · source: architecture:technology_decisions
+
+Key technology choices: React 19 frontend, FastAPI 0.115 backend, PostgreSQL 16 database, AWS cloud -- each chosen over named alternatives for fit with the app's scale and simplicity.
+
+- Frontend: React 19 (vs. Vue, Svelte) -- drives the single interactive notes screen with debounced auto-save, live search filtering, save-status indicator, and responsive layout.
+- Backend: FastAPI 0.115 (vs. Express, Django REST Framework) -- exposes a small, clear set of auth/note operations via REST with Pydantic validation and a lean footprint suited to individual-user scale.
+- Database: PostgreSQL 16 (vs. MySQL, SQLite) -- durable storage, per-user isolation, updated_at ordering, and built-in full-text search without a separate search service.
+- Cloud: AWS (vs. Azure, GCP) -- hosts static SPA, container API, and managed RDS PostgreSQL with backups at low cost as the platform default, with minimal setup.
 <!-- sdlc:auto:end narrative -->
 
 <!-- sdlc:auto:start building-blocks -->
